@@ -174,44 +174,6 @@ const App: React.FC = () => {
   const handlePointsDetected = useCallback((points: Point[]) => setActiveEmitters(points), []);
   const handleHandsDetected = useCallback((handData: HandData[]) => setHands(handData), []);
 
-  const testBackendConnection = async () => {
-    try {
-      const response = await fetch(`/api-gtw/auth/ping`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
-      }
-      
-      const data = await response.json();
-      if (data.status === "ok") {
-        const statusEl = document.getElementById('status');
-        if (statusEl) {
-          statusEl.textContent = "Server connected!";
-          statusEl.style.color = 'green';
-        }
-        console.log("Server connected successfully");
-      } else {
-        throw new Error(`Server error: ${data.status}`);
-      }
-    } catch (error: any) {
-      const statusEl = document.getElementById('status');
-      if (statusEl) {
-        statusEl.textContent = `Connection failed: ${error.message}`;
-        statusEl.style.color = 'red';
-      }
-      console.error("Connection test failed:", error);
-    }
-  };
-
-  useEffect(() => {
-    testBackendConnection();
-  }, []);
-
   const summonBlessing = async () => {
     setIsSummoning(true);
     try {
@@ -436,7 +398,6 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-slate-950 overflow-hidden select-none transition-colors duration-1000">
-      <div id="status" className="absolute top-4 left-1/2 -translate-x-1/2 z-50 text-white text-sm font-mono bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">Testing connection...</div>
       <div className={`absolute inset-0 z-0 opacity-40 mystical-video transition-all duration-1000 ${settings.theme === 'solstice' ? 'sepia-[0.3] saturate-150' : ''}`}>
         <LightDetector 
           videoRef={videoRef}

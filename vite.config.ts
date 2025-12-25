@@ -13,6 +13,12 @@ export default defineConfig(({ mode }) => {
             target: 'https://new.playhouse.ai',
             changeOrigin: true,
             secure: false,
+          },
+          '/auth-api': {
+            target: 'https://authdev.playhouse.ai/api-gtw',
+            changeOrigin: true,
+            secure: false,
+            rewrite: (path) => path.replace(/^\/auth-api/, '')
           }
         }
       },

@@ -3,6 +3,10 @@
     {
       "source": "/api-gtw/:path*",
       "destination": "https://new.playhouse.ai/api-gtw/:path*"
+    },
+    {
+      "source": "/auth-api/:path*",
+      "destination": "https://authdev.playhouse.ai/api-gtw/:path*"
     }
   ]
 }

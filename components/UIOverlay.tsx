@@ -2,6 +2,7 @@
 import React from 'react';
 import { DetectionSettings, Theme, ShapeType } from '../types';
 import { supabase } from '../lib/supabase';
+import { requestGenerateImage } from '../api/imageGeneration';
 
 interface Props {
   settings: DetectionSettings;
@@ -32,12 +33,44 @@ const UIOverlay: React.FC<Props> = ({
   const [isUnlocked, setIsUnlocked] = React.useState(false);
   const [descriptionInput, setDescriptionInput] = React.useState('');
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = React.useState<string | null>(null);
+  const [generationError, setGenerationError] = React.useState<string | null>(null);
 
-  const handleSubmitDescription = () => {
+  // Ref to store prompt data for image generation API
+  const controlsRef = React.useRef({
+    text: '',
+    width: 1024,
+    height: 1024,
+    aspect_ratio: '1:1'
+  });
+
+  const handleSubmitDescription = async () => {
     if (isUnlocked) {
       // User is unlocked, generate image
+      if (!descriptionInput.trim()) {
+        setGenerationError('Please enter a description');
+        return;
+      }
+
       setIsGenerating(true);
-      // TODO: Hook up API later
+      setGenerationError(null);
+      setGeneratedImageUrl(null);
+
+      // Update ref with current prompt
+      controlsRef.current.text = descriptionInput;
+
+      try {
+        console.log('🎨 Starting image generation for:', descriptionInput);
+        const imageUrl = await requestGenerateImage(controlsRef);
+        console.log('🎨 Image generated successfully:', imageUrl);
+        setGeneratedImageUrl(imageUrl);
+        setDescriptionInput(''); // Clear input after successful generation
+      } catch (error: any) {
+        console.error('❌ Image generation failed:', error);
+        setGenerationError(error.message || 'Failed to generate image. Please try again.');
+      } finally {
+        setIsGenerating(false);
+      }
     } else {
       // Show sign-up modal
       setShowSignUpModal(true);
@@ -292,14 +325,61 @@ const UIOverlay: React.FC<Props> = ({
       </div>
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_200px_rgba(0,0,0,0.9)] z-10" />
       
-      {isGenerating && (
+      {(isGenerating || generatedImageUrl || generationError) && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto">
-          <div className="w-64 h-64 bg-slate-900/90 backdrop-blur-3xl border border-white/20 rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center">
-            <div className="relative w-16 h-16 mb-4">
-              <div className="absolute inset-0 border-4 border-white/20 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-            </div>
-            <p className="text-white/80 text-sm font-medium">Generating...</p>
+          <div className="w-64 h-64 bg-slate-900/90 backdrop-blur-3xl border border-white/20 rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center relative overflow-hidden">
+            {isGenerating && (
+              <>
+                <div className="relative w-16 h-16 mb-4">
+                  <div className="absolute inset-0 border-4 border-white/20 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <p className="text-white/80 text-sm font-medium">Generating...</p>
+              </>
+            )}
+            
+            {!isGenerating && generatedImageUrl && (
+              <>
+                <img 
+                  src={generatedImageUrl} 
+                  alt="Generated" 
+                  className="w-full h-full object-cover rounded-2xl"
+                />
+                <button
+                  onClick={() => {
+                    setGeneratedImageUrl(null);
+                    setGenerationError(null);
+                  }}
+                  className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all"
+                  aria-label="Close"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                    <path d="M18 6 6 18"/>
+                    <path d="m6 6 12 12"/>
+                  </svg>
+                </button>
+              </>
+            )}
+            
+            {!isGenerating && generationError && (
+              <div className="p-6 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400 mx-auto mb-3">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <p className="text-red-400 text-xs mb-4">{generationError}</p>
+                <button
+                  onClick={() => {
+                    setGenerationError(null);
+                    setGeneratedImageUrl(null);
+                  }}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-xs transition-all"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
