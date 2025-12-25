@@ -7,6 +7,7 @@ import Scene3D from './components/Scene3D';
 import SnowOverlay from './components/SnowOverlay';
 import UIOverlay from './components/UIOverlay';
 import { GoogleGenAI } from "@google/genai";
+import html2canvas from 'html2canvas';
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<DetectionSettings>({
@@ -192,40 +193,78 @@ const App: React.FC = () => {
 
   const takeScreenshot = useCallback(async () => {
     try {
-      // Use native browser screenshot API
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true
-      });
-      
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.play();
-      
-      // Wait for video to be ready
-      await new Promise(resolve => {
-        video.onloadedmetadata = resolve;
-      });
-      
       const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
-        canvas.toBlob(blob => {
-          if (blob) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `snowman-${Date.now()}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
+      if (!ctx) return;
+
+      // 1. Draw background color
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 2. Draw video element
+      if (videoRef.current && videoRef.current.readyState >= 2) {
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+
+      // 3. Draw gradient overlay
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, 'rgba(2, 6, 23, 0.4)');
+      gradient.addColorStop(0.5, 'rgba(15, 23, 42, 0.4)');
+      gradient.addColorStop(1, 'rgba(2, 6, 23, 0.4)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 4. Draw WebGL canvases (Three.js scene) with screen blend mode
+      const webglCanvases = document.querySelectorAll('canvas');
+      webglCanvases.forEach(webglCanvas => {
+        if (webglCanvas !== canvas) {
+          try {
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.globalAlpha = 0.9;
+            ctx.drawImage(webglCanvas, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+          } catch (e) {
+            console.warn('Could not draw WebGL canvas:', e);
+          }
+        }
+      });
+
+      // 5. Capture UI overlay with html2canvas
+      try {
+        const uiCanvas = await html2canvas(document.body, {
+          backgroundColor: null,
+          scale: 1,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          ignoreElements: (element) => {
+            return element.tagName === 'VIDEO' || element.tagName === 'CANVAS';
           }
         });
+        
+        ctx.drawImage(uiCanvas, 0, 0, canvas.width, canvas.height);
+      } catch (e) {
+        console.warn('Could not capture UI overlay:', e);
       }
-      
-      stream.getTracks().forEach(track => track.stop());
+
+      // Download
+      canvas.toBlob(blob => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `snowman-${Date.now()}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      });
     } catch (err) {
       console.error('Error taking screenshot:', err);
     }
@@ -233,9 +272,14 @@ const App: React.FC = () => {
 
   const startRecording = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true
-      });
+      const canvas = document.createElement('canvas');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      if (!ctx) return;
+      
+      const stream = canvas.captureStream(30);
       
       recordedChunksRef.current = [];
       const mediaRecorder = new MediaRecorder(stream, {
@@ -256,12 +300,83 @@ const App: React.FC = () => {
         a.download = `snowman-${Date.now()}.webm`;
         a.click();
         URL.revokeObjectURL(url);
-        stream.getTracks().forEach(track => track.stop());
+      };
+
+      let lastUiCanvas: HTMLCanvasElement | null = null;
+      let frameCount = 0;
+      
+      const captureFrame = async () => {
+        if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') {
+          return;
+        }
+
+        // 1. Draw background
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 2. Draw video
+        if (videoRef.current && videoRef.current.readyState >= 2) {
+          ctx.save();
+          ctx.globalAlpha = 0.4;
+          ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+          ctx.restore();
+        }
+
+        // 3. Draw gradient
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, 'rgba(2, 6, 23, 0.4)');
+        gradient.addColorStop(0.5, 'rgba(15, 23, 42, 0.4)');
+        gradient.addColorStop(1, 'rgba(2, 6, 23, 0.4)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 4. Draw WebGL canvases
+        const webglCanvases = document.querySelectorAll('canvas');
+        webglCanvases.forEach(webglCanvas => {
+          if (webglCanvas !== canvas) {
+            try {
+              ctx.save();
+              ctx.globalCompositeOperation = 'screen';
+              ctx.globalAlpha = 0.9;
+              ctx.drawImage(webglCanvas, 0, 0, canvas.width, canvas.height);
+              ctx.restore();
+            } catch (e) {
+              // Ignore WebGL read errors
+            }
+          }
+        });
+
+        // 5. Capture UI overlay every 10 frames to improve performance
+        if (frameCount % 10 === 0) {
+          try {
+            lastUiCanvas = await html2canvas(document.body, {
+              backgroundColor: null,
+              scale: 1,
+              logging: false,
+              useCORS: true,
+              allowTaint: true,
+              ignoreElements: (element) => {
+                return element.tagName === 'VIDEO' || element.tagName === 'CANVAS';
+              }
+            });
+          } catch (err) {
+            // Ignore UI capture errors
+          }
+        }
+        
+        // Draw the last captured UI
+        if (lastUiCanvas) {
+          ctx.drawImage(lastUiCanvas, 0, 0, canvas.width, canvas.height);
+        }
+
+        frameCount++;
+        requestAnimationFrame(captureFrame);
       };
 
       mediaRecorder.start();
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
+      captureFrame();
     } catch (err) {
       console.error('Error starting recording:', err);
     }
