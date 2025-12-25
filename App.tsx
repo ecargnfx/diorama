@@ -176,7 +176,7 @@ const App: React.FC = () => {
 
   const testBackendConnection = async () => {
     try {
-      const response = await fetch(`https://new.playhouse.ai/api-gtw/auth/ping`, {
+      const response = await fetch(`/api-gtw/auth/ping`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
