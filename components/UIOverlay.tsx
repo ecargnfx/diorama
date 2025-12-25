@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { DetectionSettings, Theme, ShapeType } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface Props {
   settings: DetectionSettings;
@@ -24,6 +25,37 @@ const UIOverlay: React.FC<Props> = ({
     selectedShape, setSelectedShape,
     onTakeScreenshot, onStartRecording, onStopRecording, isRecording
 }) => {
+  const [showSignUpModal, setShowSignUpModal] = React.useState(false);
+  const [email, setEmail] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+
+  const handleSubmitDescription = () => {
+    setShowSignUpModal(true);
+    setSubmitError(null);
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const { error } = await supabase
+        .from('unlock3D')
+        .insert([{ email: email }]);
+
+      if (error) throw error;
+
+      setShowSignUpModal(false);
+      setEmail('');
+    } catch (error: any) {
+      console.error('Error saving email:', error);
+      setSubmitError(error.message || 'Failed to sign up. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const themes: { id: Theme; label: string; color: string }[] = [
     { id: 'midnight', label: 'Midnight', color: 'bg-blue-600' },
     { id: 'solstice', label: 'Solstice', color: 'bg-orange-400' },
@@ -102,6 +134,52 @@ const UIOverlay: React.FC<Props> = ({
         </div>
       )}
 
+      {showSignUpModal && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto bg-slate-900/90 backdrop-blur-3xl border border-white/10 p-12 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.6)] max-w-md mx-6 text-center animate-in fade-in zoom-in duration-500 relative">
+            <button
+              onClick={() => setShowSignUpModal(false)}
+              className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center text-white/60 hover:text-white transition-all"
+              aria-label="Close"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18"/>
+                <path d="m6 6 12 12"/>
+              </svg>
+            </button>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">Sign Up</h2>
+            <p className="text-sm text-white/50 mb-8">to access this feature</p>
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div className="relative">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  disabled={isSubmitting}
+                  className="w-full bg-slate-800/60 backdrop-blur-md border border-white/20 px-6 py-4 pr-14 rounded-full text-white/90 placeholder:text-white/40 text-sm focus:outline-none focus:border-white/40 focus:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white hover:bg-white/90 flex items-center justify-center transition-all hover:shadow-[0_0_15px_rgba(255,255,255,0.4)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Submit"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-950">
+                    <path d="M5 12h14"/>
+                    <path d="m12 5 7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+              {submitError && (
+                <p className="text-red-400 text-xs text-center">{submitError}</p>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-8 items-end justify-between">
         {/* <div className="pointer-events-auto w-full md:w-auto">
           <div className="bg-slate-900/40 backdrop-blur-3xl border border-white/10 p-8 rounded-[2rem] w-full md:w-[440px] shadow-2xl space-y-8">
@@ -164,9 +242,15 @@ const UIOverlay: React.FC<Props> = ({
                 <input
                     type="text"
                     placeholder="Describe something to add to scene"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSubmitDescription();
+                      }
+                    }}
                     className="bg-slate-900/60 backdrop-blur-md border border-white/10 px-6 py-3 rounded-full text-white/90 placeholder:text-white/40 text-sm focus:outline-none focus:border-white/30 focus:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all w-full md:w-[400px]"
                 />
                 <button
+                    onClick={handleSubmitDescription}
                     className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 w-11 h-11 rounded-full flex items-center justify-center transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95"
                     aria-label="Submit"
                 >
