@@ -1,0 +1,7 @@
+{
+  "name": "Mystical Snowfall",
+  "description": "An interactive webcam experience that detects bright light sources in your environment and transforms them into magical snow emitters.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
