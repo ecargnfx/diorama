@@ -29,10 +29,20 @@ const UIOverlay: React.FC<Props> = ({
   const [email, setEmail] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [isUnlocked, setIsUnlocked] = React.useState(false);
+  const [descriptionInput, setDescriptionInput] = React.useState('');
+  const [isGenerating, setIsGenerating] = React.useState(false);
 
   const handleSubmitDescription = () => {
-    setShowSignUpModal(true);
-    setSubmitError(null);
+    if (isUnlocked) {
+      // User is unlocked, generate image
+      setIsGenerating(true);
+      // TODO: Hook up API later
+    } else {
+      // Show sign-up modal
+      setShowSignUpModal(true);
+      setSubmitError(null);
+    }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -47,7 +57,8 @@ const UIOverlay: React.FC<Props> = ({
 
       if (error) throw error;
 
-      setShowSignUpModal(false);
+      // Show success state
+      setIsUnlocked(true);
       setEmail('');
     } catch (error: any) {
       console.error('Error saving email:', error);
@@ -147,9 +158,11 @@ const UIOverlay: React.FC<Props> = ({
                 <path d="m6 6 12 12"/>
               </svg>
             </button>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">Sign Up</h2>
-            <p className="text-sm text-white/50 mb-8">to access this feature</p>
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+            {!isUnlocked ? (
+              <>
+                <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">Sign Up</h2>
+                <p className="text-sm text-white/50 mb-8">to access this feature</p>
+                <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div className="relative">
                 <input
                   type="email"
@@ -172,10 +185,23 @@ const UIOverlay: React.FC<Props> = ({
                   </svg>
                 </button>
               </div>
-              {submitError && (
-                <p className="text-red-400 text-xs text-center">{submitError}</p>
-              )}
-            </form>
+                  {submitError && (
+                    <p className="text-red-400 text-xs text-center">{submitError}</p>
+                  )}
+                </form>
+              </>
+            ) : (
+              <div className="py-8">
+                <h2 className="text-6xl md:text-7xl font-bold text-white mb-4">Unlocked</h2>
+                <p className="text-sm text-white/60">You can now generate images!</p>
+                <button
+                  onClick={() => setShowSignUpModal(false)}
+                  className="mt-8 px-10 py-4 rounded-full bg-white text-slate-950 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] text-sm transition-all font-bold"
+                >
+                  Start Creating
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -241,6 +267,8 @@ const UIOverlay: React.FC<Props> = ({
             <div className="flex items-center gap-3 w-full">
                 <input
                     type="text"
+                    value={descriptionInput}
+                    onChange={(e) => setDescriptionInput(e.target.value)}
                     placeholder="Describe something to add to scene"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
@@ -262,6 +290,19 @@ const UIOverlay: React.FC<Props> = ({
             </div>
         </div>
       </div>
+      <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_200px_rgba(0,0,0,0.9)] z-10" />
+      
+      {isGenerating && (
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto">
+          <div className="w-64 h-64 bg-slate-900/90 backdrop-blur-3xl border border-white/20 rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center">
+            <div className="relative w-16 h-16 mb-4">
+              <div className="absolute inset-0 border-4 border-white/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <p className="text-white/80 text-sm font-medium">Generating...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
