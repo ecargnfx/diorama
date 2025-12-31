@@ -1,8 +1,8 @@
 // Replicate Image Generation API 
 let lastGeneratedImageUrl: string | null = null;
 
-// Base API Gateway URL
-const BASE_API_GATEWAY_URL = "https://new.playhouse.ai/api-gtw";
+// Base API Gateway URL - using proxy to avoid CORS
+const BASE_API_GATEWAY_URL = "/api-gtw";
 
 interface ControlsRef {
   text: string;
@@ -62,7 +62,7 @@ export const requestGenerateImage = async (controlsRef: { current: ControlsRef }
   console.log('All cookies:', document.cookie); // DEBUG: See what cookies exist
   
   // TEMPORARY: Hardcoded token for testing
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3NjY3ODA4MDB9.AU_TTauSZEkoeYu2f15zdDY3SI-iQj38AFeJnl5I4h0'; // 👈 PASTE YOUR TOKEN HERE
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlQHBsYXlob3VzZS5haSIsInVzZXJJRCI6NSwid2FsbGV0QWRkcmVzcyI6ImMzMjMwNzYxMzkzNjdhOTVlMTQ2NjE4OGZhZDg1MmJmNThlMWU0OWE3MjI0YmQ1MGQxN2IxYWU5ZTUzY2FiNzAiLCJleHAiOjE3NjcyMDk2MTV9.5WE5Op4NjwDhpCcs_PX8w-F9BVtyeRVQB_nTsmk8z0s'; // 👈 PASTE YOUR TOKEN HERE
   
   // Original cookie logic (commented out for testing)
   // const token = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1] || null;
@@ -288,7 +288,7 @@ export const generateSegmentedImage = async (imageUrl: string): Promise<string> 
   console.log('All cookies:', document.cookie); // DEBUG: See what cookies exist
   
   // TEMPORARY: Hardcoded token for testing (same as requestGenerateImage)
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3NjY3ODA4MDB9.AU_TTauSZEkoeYu2f15zdDY3SI-iQj38AFeJnl5I4h0'; // 👈 PASTE YOUR TOKEN HERE
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlQHBsYXlob3VzZS5haSIsInVzZXJJRCI6NSwid2FsbGV0QWRkcmVzcyI6ImMzMjMwNzYxMzkzNjdhOTVlMTQ2NjE4OGZhZDg1MmJmNThlMWU0OWE3MjI0YmQ1MGQxN2IxYWU5ZTUzY2FiNzAiLCJleHAiOjE3NjcyMDk2MTV9.5WE5Op4NjwDhpCcs_PX8w-F9BVtyeRVQB_nTsmk8z0s'; // 👈 PASTE YOUR TOKEN HERE
   
   // Original cookie logic (commented out for testing)
   // const token = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1] || null;
@@ -460,7 +460,7 @@ export const generateTrellisModel = async (imageUrl: string, options: TrellisOpt
     console.log('🎲 Downloading GLB model from Replicate...');
     
     // Get auth token
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3NjY3ODA4MDB9.AU_TTauSZEkoeYu2f15zdDY3SI-iQj38AFeJnl5I4h0';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlQHBsYXlob3VzZS5haSIsInVzZXJJRCI6NSwid2FsbGV0QWRkcmVzcyI6ImMzMjMwNzYxMzkzNjdhOTVlMTQ2NjE4OGZhZDg1MmJmNThlMWU0OWE3MjI0YmQ1MGQxN2IxYWU5ZTUzY2FiNzAiLCJleHAiOjE3NjcyMDk2MTV9.5WE5Op4NjwDhpCcs_PX8w-F9BVtyeRVQB_nTsmk8z0s';
     
     // Get user info
     const verifyRes = await fetch(`/auth-api/auth/verify`, {

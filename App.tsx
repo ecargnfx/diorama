@@ -6,8 +6,17 @@ import HandTracker from './components/HandTracker';
 import Scene3D from './components/Scene3D';
 import SnowOverlay from './components/SnowOverlay';
 import UIOverlay from './components/UIOverlay';
+import AssetPanel from './components/AssetPanel';
 import { GoogleGenAI } from "@google/genai";
 import html2canvas from 'html2canvas';
+
+interface Asset {
+  id: string;
+  type: 'image' | 'model';
+  url: string;
+  thumbnail?: string;
+  createdAt: number;
+}
 
 const App: React.FC = () => {
   const [settings, setSettings] = useState<DetectionSettings>({
@@ -26,6 +35,10 @@ const App: React.FC = () => {
   ]);
   const [placedOrbs, setPlacedOrbs] = useState<Orb[]>([]);
   const [selectedShape, setSelectedShape] = useState<ShapeType>('sphere');
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [descriptionInput, setDescriptionInput] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const submitHandlerRef = useRef<(() => void) | null>(null);
   
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [blessing, setBlessing] = useState<string | null>(null);
@@ -390,6 +403,22 @@ const App: React.FC = () => {
     }
   }, [isRecording]);
 
+  const handleAddAsset = useCallback((type: 'image' | 'model', url: string, thumbnail?: string) => {
+    const newAsset: Asset = {
+      id: Date.now().toString(),
+      type,
+      url,
+      thumbnail,
+      createdAt: Date.now()
+    };
+    setAssets(prev => [newAsset, ...prev]);
+  }, []);
+
+  const handleAddAssetToScene = useCallback((asset: Asset) => {
+    console.log('🎯 Adding asset to scene:', asset);
+    // TODO: Implement adding asset to scene
+  }, []);
+
   const themeColors = {
     midnight: 'from-[#020617] via-[#0f172a] to-[#020617]',
     solstice: 'from-[#1a0f02] via-[#2a1b0f] to-[#1a0f02]',
@@ -421,6 +450,15 @@ const App: React.FC = () => {
 
       <SnowOverlay emitters={activeEmitters} settings={settings} />
 
+      <AssetPanel 
+        assets={assets}
+        onAddToScene={handleAddAssetToScene}
+        descriptionInput={descriptionInput}
+        onDescriptionChange={setDescriptionInput}
+        isGenerating={isGenerating}
+        onSubmit={() => submitHandlerRef.current?.()}
+      />
+
       <UIOverlay 
         settings={settings} setSettings={setSettings} 
         isCameraActive={isCameraActive} 
@@ -431,6 +469,12 @@ const App: React.FC = () => {
         onStartRecording={startRecording}
         onStopRecording={stopRecording}
         isRecording={isRecording}
+        onAddAsset={handleAddAsset}
+        descriptionInput={descriptionInput}
+        setDescriptionInput={setDescriptionInput}
+        isGenerating={isGenerating}
+        setIsGenerating={setIsGenerating}
+        submitHandlerRef={submitHandlerRef}
       />
 
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_200px_rgba(0,0,0,0.9)] z-10" />

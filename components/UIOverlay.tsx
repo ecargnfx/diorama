@@ -2,7 +2,7 @@
 import React from 'react';
 import { DetectionSettings, Theme, ShapeType } from '../types';
 import { supabase } from '../lib/supabase';
-import { requestGenerateImage } from '../api/imageGeneration';
+import { requestGenerateImage, generateTrellisModel } from '../api/imageGeneration';
 
 interface Props {
   settings: DetectionSettings;
@@ -18,23 +18,33 @@ interface Props {
   onStartRecording: () => void;
   onStopRecording: () => void;
   isRecording: boolean;
+  onAddAsset: (type: 'image' | 'model', url: string, thumbnail?: string) => void;
+  descriptionInput: string;
+  setDescriptionInput: React.Dispatch<React.SetStateAction<string>>;
+  isGenerating: boolean;
+  setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>;
+  submitHandlerRef: React.MutableRefObject<(() => void) | null>;
 }
 
 const UIOverlay: React.FC<Props> = ({ 
     settings, setSettings, isCameraActive, 
     onSummonBlessing, isSummoning, blessing, onClearBlessing,
     selectedShape, setSelectedShape,
-    onTakeScreenshot, onStartRecording, onStopRecording, isRecording
+    onTakeScreenshot, onStartRecording, onStopRecording, isRecording,
+    onAddAsset,
+    descriptionInput, setDescriptionInput, isGenerating, setIsGenerating,
+    submitHandlerRef
 }) => {
   const [showSignUpModal, setShowSignUpModal] = React.useState(false);
   const [email, setEmail] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = React.useState(false);
-  const [descriptionInput, setDescriptionInput] = React.useState('');
-  const [isGenerating, setIsGenerating] = React.useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = React.useState<string | null>(null);
   const [generationError, setGenerationError] = React.useState<string | null>(null);
+  const [isGenerating3D, setIsGenerating3D] = React.useState(false);
+  const [model3DUrl, setModel3DUrl] = React.useState<string | null>(null);
+  const [model3DError, setModel3DError] = React.useState<string | null>(null);
 
   // Ref to store prompt data for image generation API
   const controlsRef = React.useRef({
@@ -62,8 +72,9 @@ const UIOverlay: React.FC<Props> = ({
       try {
         console.log('🎨 Starting image generation for:', descriptionInput);
         const imageUrl = await requestGenerateImage(controlsRef);
-        console.log('🎨 Image generated successfully:', imageUrl);
+        console.log('🖼️ Image generated successfully:', imageUrl);
         setGeneratedImageUrl(imageUrl);
+        onAddAsset('image', imageUrl);
         setDescriptionInput(''); // Clear input after successful generation
       } catch (error: any) {
         console.error('❌ Image generation failed:', error);
@@ -75,6 +86,32 @@ const UIOverlay: React.FC<Props> = ({
       // Show sign-up modal
       setShowSignUpModal(true);
       setSubmitError(null);
+    }
+  };
+
+  // Set the submit handler ref so AssetPanel can call it
+  React.useEffect(() => {
+    submitHandlerRef.current = handleSubmitDescription;
+  }, [handleSubmitDescription]);
+
+  const handle3DGeneration = async () => {
+    if (!generatedImageUrl) return;
+
+    setIsGenerating3D(true);
+    setModel3DError(null);
+    setModel3DUrl(null);
+
+    try {
+      console.log('🎲 Starting 3D model generation for image:', generatedImageUrl);
+      const modelUrl = await generateTrellisModel(generatedImageUrl);
+      console.log('🎲 3D model generated successfully:', modelUrl);
+      setModel3DUrl(modelUrl);
+      onAddAsset('model', modelUrl, generatedImageUrl || undefined);
+    } catch (error: any) {
+      console.error('❌ 3D model generation failed:', error);
+      setModel3DError(error.message || 'Failed to generate 3D model. Please try again.');
+    } finally {
+      setIsGenerating3D(false);
     }
   };
 
@@ -108,22 +145,7 @@ const UIOverlay: React.FC<Props> = ({
 
   return (
     <div className="absolute inset-0 z-40 pointer-events-none flex flex-col justify-between p-8 md:p-12 overflow-hidden">
-      <div className="flex flex-row items-start justify-between w-full">
-        <div className="flex flex-col items-center md:items-start space-y-2">
-          <div className="pointer-events-auto">
-            <h1 className="text-4xl md:text-5xl font-light serif-font italic tracking-wide text-white drop-shadow-2xl">
-              Let it Snow
-            </h1>
-            <div className="h-px w-32 bg-gradient-to-r from-white/80 to-transparent mt-2 mx-auto md:mx-0" />
-            <p className="text-[10px] text-white/50 font-semibold mt-6 tracking-[0.4em] uppercase">
-              Let's build a snowman!
-            </p>
-            <p className="text-[9px] text-white/40 tracking-widest leading-relaxed uppercase">
-              Move one hand to position. <br/> Use two hands or two fingers to scale. <br/> Release to set in the scene. <br/> <i>Shine a light to make it snow</i>
-            </p>          
-          </div>
-        </div>
-        
+      <div className="flex flex-row items-start justify-end w-full">
         <div className="pointer-events-auto flex items-center gap-3">
           <button
               onClick={onTakeScreenshot}
@@ -297,92 +319,9 @@ const UIOverlay: React.FC<Props> = ({
                     </svg>
                 </button>
             </div>
-            <div className="flex items-center gap-3 w-full">
-                <input
-                    type="text"
-                    value={descriptionInput}
-                    onChange={(e) => setDescriptionInput(e.target.value)}
-                    placeholder="Describe something to add to scene"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSubmitDescription();
-                      }
-                    }}
-                    className="bg-slate-900/60 backdrop-blur-md border border-white/10 px-6 py-3 rounded-full text-white/90 placeholder:text-white/40 text-sm focus:outline-none focus:border-white/30 focus:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all w-full md:w-[400px]"
-                />
-                <button
-                    onClick={handleSubmitDescription}
-                    className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 w-11 h-11 rounded-full flex items-center justify-center transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95"
-                    aria-label="Submit"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                        <path d="M5 12h14"/>
-                        <path d="m12 5 7 7-7 7"/>
-                    </svg>
-                </button>
-            </div>
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_200px_rgba(0,0,0,0.9)] z-10" />
-      
-      {(isGenerating || generatedImageUrl || generationError) && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto">
-          <div className="w-64 h-64 bg-slate-900/90 backdrop-blur-3xl border border-white/20 rounded-2xl shadow-[0_0_60px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center relative overflow-hidden">
-            {isGenerating && (
-              <>
-                <div className="relative w-16 h-16 mb-4">
-                  <div className="absolute inset-0 border-4 border-white/20 rounded-full"></div>
-                  <div className="absolute inset-0 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                </div>
-                <p className="text-white/80 text-sm font-medium">Generating...</p>
-              </>
-            )}
-            
-            {!isGenerating && generatedImageUrl && (
-              <>
-                <img 
-                  src={generatedImageUrl} 
-                  alt="Generated" 
-                  className="w-full h-full object-cover rounded-2xl"
-                />
-                <button
-                  onClick={() => {
-                    setGeneratedImageUrl(null);
-                    setGenerationError(null);
-                  }}
-                  className="absolute top-2 right-2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-all"
-                  aria-label="Close"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                    <path d="M18 6 6 18"/>
-                    <path d="m6 6 12 12"/>
-                  </svg>
-                </button>
-              </>
-            )}
-            
-            {!isGenerating && generationError && (
-              <div className="p-6 text-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400 mx-auto mb-3">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <p className="text-red-400 text-xs mb-4">{generationError}</p>
-                <button
-                  onClick={() => {
-                    setGenerationError(null);
-                    setGeneratedImageUrl(null);
-                  }}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white text-xs transition-all"
-                >
-                  Try Again
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
