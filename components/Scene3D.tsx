@@ -9,6 +9,7 @@ interface LoadedModel {
   url: string;
   position?: { x: number; y: number; z: number };
   scale?: number;
+  rotation?: { x: number; y: number; z: number };
 }
 
 interface Props {
@@ -173,6 +174,13 @@ const Scene3D: React.FC<Props> = ({ activeOrb, placedOrbs, theme, loadedModels =
           if (Math.abs(currentScale - newScale) > 0.01) {
             existingModel.scale.setScalar(newScale);
           }
+        }
+        if (modelData.rotation) {
+          existingModel.rotation.set(
+            modelData.rotation.x,
+            modelData.rotation.y,
+            modelData.rotation.z
+          );
         }
       } else {
         // Load new model

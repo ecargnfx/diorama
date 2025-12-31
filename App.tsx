@@ -39,7 +39,7 @@ const App: React.FC = () => {
   const [descriptionInput, setDescriptionInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const submitHandlerRef = useRef<(() => void) | null>(null);
-  const [loadedModels, setLoadedModels] = useState<Array<{ id: string; url: string; position?: { x: number; y: number; z: number }; scale?: number }>>([]);
+  const [loadedModels, setLoadedModels] = useState<Array<{ id: string; url: string; position?: { x: number; y: number; z: number }; scale?: number; rotation?: { x: number; y: number; z: number } }>>([]);
   
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [blessing, setBlessing] = useState<string | null>(null);
@@ -53,6 +53,10 @@ const App: React.FC = () => {
   const rotationZRef = useRef(0);
   const lastRadiusRef = useRef(0.5);
   const holdPositionRef = useRef<{ x: number; y: number; z: number; startTime: number } | null>(null);
+  
+  // Refs to track initial hand rotation when model3D mode starts
+  const initialHandRotationRef = useRef<{ x: number; y: number; z: number } | null>(null);
+  const model3DModeActiveRef = useRef(false);
 
   // Calculate current orb position using useMemo to prevent unnecessary re-renders
   const currentOrb = useMemo(() => {
@@ -129,12 +133,31 @@ const App: React.FC = () => {
     const hand1 = hands[0];
     const hand2 = hands[1];
 
-    if (!hand1.isDetected || selectedShape !== 'model3D') return null;
+    if (!hand1.isDetected || selectedShape !== 'model3D') {
+      // Reset when exiting model3D mode
+      if (model3DModeActiveRef.current) {
+        model3DModeActiveRef.current = false;
+        initialHandRotationRef.current = null;
+      }
+      return null;
+    }
+
+    // Initialize rotation reference when first entering model3D mode
+    if (!model3DModeActiveRef.current && hand1.isDetected) {
+      model3DModeActiveRef.current = true;
+      initialHandRotationRef.current = {
+        x: hand1.rotationX,
+        y: hand1.rotationY,
+        z: hand1.rotationZ
+      };
+      rotationZRef.current = 0; // Reset Z rotation for two-hand mode
+    }
 
     let targetX = hand1.x;
     let targetY = hand1.y;
     let targetZ = hand1.z;
     let scale = 2;
+    let rotX = 0, rotY = 0, rotZ = 0;
 
     if (hand2.isDetected) {
       targetX = (hand1.x + hand2.x) / 2;
@@ -147,16 +170,43 @@ const App: React.FC = () => {
         Math.pow(hand1.z - hand2.z, 2)
       );
       scale = Math.max(0.5, dist * 5);
+
+      // Two hands: use rotation based on hand positions
+      // Rotation logic for two hands: left hand above right hand = counter-clockwise
+      const yDiff = hand1.y - hand2.y;
+      if (Math.abs(yDiff) > 0.05) {
+        if (yDiff < 0) {
+          rotationZRef.current -= 0.05;
+        } else {
+          rotationZRef.current += 0.05;
+        }
+      }
+      rotZ = rotationZRef.current;
+
+      // Add X and Y rotation based on hand orientation (relative to initial)
+      const xDiff = hand2.x - hand1.x;
+      const zDiff = hand2.z - hand1.z;
+      rotY = Math.atan2(xDiff, zDiff) * 0.5; // Reduced sensitivity
+      rotX = Math.atan2(yDiff, Math.sqrt(xDiff * xDiff + zDiff * zDiff)) * 0.5;
     } else {
-      // Single hand: scale based on fingers extended (1-5 fingers -> 0.5-3 scale)
+      // Single hand: use hand rotation delta from initial
       scale = Math.max(0.5, (hand1.fingersExtended / 5) * 3);
+      
+      if (initialHandRotationRef.current) {
+        rotX = (hand1.rotationX - initialHandRotationRef.current.x) * 0.5;
+        rotY = (hand1.rotationY - initialHandRotationRef.current.y) * 0.5;
+        rotZ = (hand1.rotationZ - initialHandRotationRef.current.z) * 0.5;
+      }
     }
 
     return {
       x: (0.5 - targetX) * 10,
       y: (0.5 - targetY) * 8,
       z: (targetZ * -15),
-      scale
+      scale,
+      rotationX: rotX,
+      rotationY: rotY,
+      rotationZ: rotZ
     };
   }, [hands, selectedShape]);
 
@@ -172,7 +222,11 @@ const App: React.FC = () => {
             model.position.y !== modelControlPosition.y ||
             model.position.z !== modelControlPosition.z;
           const scaleChanged = model.scale !== modelControlPosition.scale;
-          return posChanged || scaleChanged;
+          const rotChanged = !model.rotation ||
+            model.rotation.x !== modelControlPosition.rotationX ||
+            model.rotation.y !== modelControlPosition.rotationY ||
+            model.rotation.z !== modelControlPosition.rotationZ;
+          return posChanged || scaleChanged || rotChanged;
         });
 
         if (!needsUpdate) return prev;
@@ -185,7 +239,12 @@ const App: React.FC = () => {
             y: modelControlPosition.y,
             z: modelControlPosition.z
           },
-          scale: modelControlPosition.scale
+          scale: modelControlPosition.scale,
+          rotation: {
+            x: modelControlPosition.rotationX,
+            y: modelControlPosition.rotationY,
+            z: modelControlPosition.rotationZ
+          }
         }));
       });
     }
