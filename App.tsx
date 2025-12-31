@@ -24,7 +24,8 @@ const App: React.FC = () => {
     sensitivity: 0.6,
     particleCount: 1500,
     gravity: 0.03,
-    theme: 'midnight'
+    theme: 'midnight',
+    filterMode: 'mystical'
   });
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -594,7 +595,7 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-slate-950 overflow-hidden select-none transition-colors duration-1000">
-      <div className={`absolute inset-0 z-0 opacity-40 mystical-video transition-all duration-1000 ${settings.theme === 'solstice' ? 'sepia-[0.3] saturate-150' : ''}`}>
+      <div className={`absolute inset-0 z-0 ${settings.filterMode === 'mystical' ? 'opacity-40' : 'opacity-100'} mystical-video transition-all duration-1000 ${settings.theme === 'solstice' && settings.filterMode === 'mystical' ? 'sepia-[0.3] saturate-150' : ''}`}>
         <LightDetector 
           videoRef={videoRef}
           settings={settings} 
@@ -607,15 +608,15 @@ const App: React.FC = () => {
         />
       </div>
 
-      <div className={`absolute inset-0 z-[1] pointer-events-none mix-blend-screen opacity-70 bg-gradient-to-br ${themeColors[settings.theme]} transition-all duration-1000`} />
+      {settings.filterMode === 'mystical' && (
+        <div className={`absolute inset-0 z-[1] pointer-events-none mix-blend-screen opacity-70 bg-gradient-to-br ${themeColors[settings.theme]} transition-all duration-1000`} />
+      )}
 
-      <div className="absolute inset-0 z-[2] opacity-30 pointer-events-none animate-mystical bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
-
-      <div className="absolute inset-0 z-[3] mix-blend-screen opacity-90">
+      <div className={`absolute inset-0 z-[3] ${settings.filterMode === 'mystical' ? 'mix-blend-screen opacity-90' : 'opacity-100'}`}>
         <Scene3D activeOrb={currentOrb} placedOrbs={placedOrbs} theme={settings.theme} loadedModels={loadedModels} />
       </div>
 
-      <SnowOverlay emitters={activeEmitters} settings={settings} />
+      {selectedShape === 'none' && <SnowOverlay emitters={activeEmitters} settings={settings} />}
 
       <AssetPanel 
         assets={assets}

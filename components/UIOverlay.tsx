@@ -324,6 +324,21 @@ const UIOverlay: React.FC<Props> = ({
                         <path d="M12 3l1.912 5.813 6.088.281-4.781 3.656 1.781 5.75L12 15l-5 3.5 1.781-5.75-4.781-3.656 6.088-.281L12 3z"/>
                     </svg>
                 </button>
+                <div className="w-px h-8 bg-white/20" />
+                <button
+                    onClick={() => setSettings(prev => ({ ...prev, filterMode: prev.filterMode === 'clean' ? 'mystical' : 'clean' }))}
+                    className={`w-8 h-8 rounded transition-all flex items-center justify-center ${settings.filterMode === 'mystical' ? 'bg-indigo-600 scale-110 shadow-[0_0_15px_rgba(99,102,241,0.8)] ring-2 ring-white/30' : 'bg-slate-600/40 hover:bg-slate-600/60'}`}
+                    aria-label="Filter Mode"
+                    title={settings.filterMode === 'mystical' ? 'Mystical Mode' : 'Clean Mode'}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={settings.filterMode === 'mystical' ? 'opacity-100' : 'opacity-60'}>
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6"></path>
+                        <path d="m4.2 4.2 4.2 4.2m5.6 5.6 4.2 4.2"></path>
+                        <path d="M1 12h6m6 0h6"></path>
+                        <path d="m4.2 19.8 4.2-4.2m5.6-5.6 4.2-4.2"></path>
+                    </svg>
+                </button>
             </div>
         </div>
       </div>

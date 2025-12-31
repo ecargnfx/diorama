@@ -45,6 +45,7 @@ export interface Particle {
 }
 
 export type Theme = 'midnight' | 'solstice' | 'aurora';
+export type FilterMode = 'clean' | 'mystical';
 
 export interface DetectionSettings {
   threshold: number;
@@ -52,4 +53,5 @@ export interface DetectionSettings {
   particleCount: number;
   gravity: number;
   theme: Theme;
+  filterMode: FilterMode;
 }
