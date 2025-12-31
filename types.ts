@@ -17,7 +17,7 @@ export interface HandData {
   rotationZ: number;
 }
 
-export type ShapeType = 'sphere' | 'cone' | 'brownSphere' | 'none';
+export type ShapeType = 'sphere' | 'cone' | 'model3D' | 'none';
 
 export interface Orb {
   id: string;

@@ -1,21 +1,31 @@
 
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Orb, Theme } from '../types';
+
+interface LoadedModel {
+  id: string;
+  url: string;
+  position?: { x: number; y: number; z: number };
+  scale?: number;
+}
 
 interface Props {
   activeOrb: Orb | null;
   placedOrbs: Orb[];
   theme: Theme;
+  loadedModels?: LoadedModel[];
 }
 
-const Scene3D: React.FC<Props> = ({ activeOrb, placedOrbs, theme }) => {
+const Scene3D: React.FC<Props> = ({ activeOrb, placedOrbs, theme, loadedModels = [] }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
     orbsMap: Map<string, THREE.Mesh>;
+    modelsMap: Map<string, THREE.Group>;
   } | null>(null);
 
   useEffect(() => {
@@ -44,6 +54,7 @@ const Scene3D: React.FC<Props> = ({ activeOrb, placedOrbs, theme }) => {
     camera.position.z = 5;
 
     const orbsMap = new Map<string, THREE.Mesh>();
+    const modelsMap = new Map<string, THREE.Group>();
 
     const animate = () => {
       requestAnimationFrame(animate);
@@ -59,7 +70,7 @@ const Scene3D: React.FC<Props> = ({ activeOrb, placedOrbs, theme }) => {
     };
     animate();
 
-    sceneRef.current = { scene, camera, renderer, orbsMap };
+    sceneRef.current = { scene, camera, renderer, orbsMap, modelsMap };
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -106,13 +117,13 @@ const Scene3D: React.FC<Props> = ({ activeOrb, placedOrbs, theme }) => {
         const material = new THREE.MeshPhysicalMaterial({
           color: orb.color,
           transparent: true,
-          opacity: orb.shape === 'brownSphere' ? 0.9 : 0.6,
-          transmission: orb.shape === 'brownSphere' ? 0 : 0.5,
+          opacity: 0.6,
+          transmission: 0.5,
           thickness: 0.5,
-          roughness: orb.shape === 'brownSphere' ? 0.3 : 0.1,
-          metalness: orb.shape === 'brownSphere' ? 0.8 : 0.2,
+          roughness: 0.1,
+          metalness: 0.2,
           emissive: orb.color,
-          emissiveIntensity: orb.shape === 'brownSphere' ? 0.2 : 0.8,
+          emissiveIntensity: 0.8,
         });
         mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
@@ -126,6 +137,87 @@ const Scene3D: React.FC<Props> = ({ activeOrb, placedOrbs, theme }) => {
       mesh.rotation.z = orb.rotationZ;
     });
   }, [activeOrb, placedOrbs]);
+
+  // Handle loaded 3D models
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    const { scene, modelsMap } = sceneRef.current;
+
+    const currentModelIds = new Set(loadedModels.map(m => m.id));
+
+    // Remove old models
+    modelsMap.forEach((model, id) => {
+      if (!currentModelIds.has(id)) {
+        scene.remove(model);
+        modelsMap.delete(id);
+        console.log('🗑️ Removed model from scene:', id);
+      }
+    });
+
+    // Load new models or update existing ones
+    loadedModels.forEach(modelData => {
+      const existingModel = modelsMap.get(modelData.id);
+      
+      if (existingModel) {
+        // Update position and scale of existing model
+        if (modelData.position) {
+          existingModel.position.set(
+            modelData.position.x,
+            modelData.position.y,
+            modelData.position.z
+          );
+        }
+        if (modelData.scale) {
+          const currentScale = existingModel.scale.x;
+          const newScale = modelData.scale;
+          if (Math.abs(currentScale - newScale) > 0.01) {
+            existingModel.scale.setScalar(newScale);
+          }
+        }
+      } else {
+        // Load new model
+        console.log('📦 Loading model into scene:', modelData.url);
+        const loader = new GLTFLoader();
+        loader.load(
+          modelData.url,
+          (gltf) => {
+            const model = gltf.scene;
+            
+            // Center and scale model
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const targetScale = modelData.scale || 2;
+            const scale = targetScale / maxDim;
+            
+            model.scale.setScalar(scale);
+            model.position.sub(center.multiplyScalar(scale));
+            
+            // Apply position if provided
+            if (modelData.position) {
+              model.position.add(new THREE.Vector3(
+                modelData.position.x,
+                modelData.position.y,
+                modelData.position.z
+              ));
+            }
+            
+            scene.add(model);
+            modelsMap.set(modelData.id, model);
+            console.log('✅ Model added to scene:', modelData.id);
+          },
+          (progress) => {
+            const percent = progress.total > 0 ? Math.round((progress.loaded / progress.total) * 100) : 0;
+            console.log(`Loading model ${modelData.id}: ${percent}%`);
+          },
+          (error) => {
+            console.error('❌ Error loading model into scene:', error);
+          }
+        );
+      }
+    });
+  }, [loadedModels]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 };

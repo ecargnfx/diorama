@@ -39,6 +39,7 @@ const App: React.FC = () => {
   const [descriptionInput, setDescriptionInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const submitHandlerRef = useRef<(() => void) | null>(null);
+  const [loadedModels, setLoadedModels] = useState<Array<{ id: string; url: string; position?: { x: number; y: number; z: number }; scale?: number }>>([]);
   
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [blessing, setBlessing] = useState<string | null>(null);
@@ -58,7 +59,7 @@ const App: React.FC = () => {
     const hand1 = hands[0];
     const hand2 = hands[1];
 
-    if (!hand1.isDetected || selectedShape === 'none') return null;
+    if (!hand1.isDetected || selectedShape === 'none' || selectedShape === 'model3D') return null;
 
     let targetX = hand1.x;
     let targetY = hand1.y;
@@ -96,8 +97,7 @@ const App: React.FC = () => {
       lastRadiusRef.current = radius;
     }
 
-    const color = selectedShape === 'brownSphere' ? '#92400e' : 
-                  selectedShape === 'cone' ? '#ff8800' : 
+    const color = selectedShape === 'cone' ? '#ff8800' : 
                   (settings.theme === 'solstice' ? '#ffcc33' : (settings.theme === 'aurora' ? '#4ade80' : '#b0e0ff'));
 
     // Use hand rotation for single hand, or rotationZRef for two hands
@@ -123,6 +123,73 @@ const App: React.FC = () => {
       rotationZ: rotZ
     };
   }, [hands, settings.theme, selectedShape]);
+
+  // Calculate hand position for controlling 3D models when model3D mode is selected
+  const modelControlPosition = useMemo(() => {
+    const hand1 = hands[0];
+    const hand2 = hands[1];
+
+    if (!hand1.isDetected || selectedShape !== 'model3D') return null;
+
+    let targetX = hand1.x;
+    let targetY = hand1.y;
+    let targetZ = hand1.z;
+    let scale = 2;
+
+    if (hand2.isDetected) {
+      targetX = (hand1.x + hand2.x) / 2;
+      targetY = (hand1.y + hand2.y) / 2;
+      targetZ = (hand1.z + hand2.z) / 2;
+
+      const dist = Math.sqrt(
+        Math.pow(hand1.x - hand2.x, 2) + 
+        Math.pow(hand1.y - hand2.y, 2) +
+        Math.pow(hand1.z - hand2.z, 2)
+      );
+      scale = Math.max(0.5, dist * 5);
+    } else {
+      // Single hand: scale based on fingers extended (1-5 fingers -> 0.5-3 scale)
+      scale = Math.max(0.5, (hand1.fingersExtended / 5) * 3);
+    }
+
+    return {
+      x: (0.5 - targetX) * 10,
+      y: (0.5 - targetY) * 8,
+      z: (targetZ * -15),
+      scale
+    };
+  }, [hands, selectedShape]);
+
+  // Update loaded models positions when in model3D control mode
+  useEffect(() => {
+    if (modelControlPosition && loadedModels.length > 0) {
+      console.log('🎮 Model control position:', modelControlPosition);
+      setLoadedModels(prev => {
+        // Check if any model needs updating
+        const needsUpdate = prev.some(model => {
+          const posChanged = !model.position || 
+            model.position.x !== modelControlPosition.x ||
+            model.position.y !== modelControlPosition.y ||
+            model.position.z !== modelControlPosition.z;
+          const scaleChanged = model.scale !== modelControlPosition.scale;
+          return posChanged || scaleChanged;
+        });
+
+        if (!needsUpdate) return prev;
+
+        console.log('✅ Updating model positions to:', modelControlPosition);
+        return prev.map(model => ({
+          ...model,
+          position: {
+            x: modelControlPosition.x,
+            y: modelControlPosition.y,
+            z: modelControlPosition.z
+          },
+          scale: modelControlPosition.scale
+        }));
+      });
+    }
+  }, [modelControlPosition, loadedModels.length]);
 
   // Separate effect for gesture detection
   useEffect(() => {
@@ -414,9 +481,50 @@ const App: React.FC = () => {
     setAssets(prev => [newAsset, ...prev]);
   }, []);
 
-  const handleAddAssetToScene = useCallback((asset: Asset) => {
-    console.log('🎯 Adding asset to scene:', asset);
-    // TODO: Implement adding asset to scene
+  const handleAddAssetToScene = useCallback((asset: Asset, modelUrl?: string) => {
+    console.log('🎯 Adding asset to scene:', asset, 'modelUrl:', modelUrl);
+    
+    // If a modelUrl is provided (from generated 3D), use that instead
+    if (modelUrl) {
+      const newModel = {
+        id: `${asset.id}-3d`,
+        url: modelUrl,
+        position: { x: 0, y: 0, z: 0 }, // Center of scene
+        scale: 2 // Default scale
+      };
+      
+      setLoadedModels(prev => {
+        // Check if model already exists
+        if (prev.some(m => m.id === newModel.id)) {
+          console.log('⚠️ Model already in scene:', newModel.id);
+          return prev;
+        }
+        console.log('✅ Adding generated 3D model to scene:', newModel.id);
+        return [...prev, newModel];
+      });
+    } else if (asset.type === 'model') {
+      // Add 3D model to the scene
+      const newModel = {
+        id: asset.id,
+        url: asset.url,
+        position: { x: 0, y: 0, z: 0 }, // Center of scene
+        scale: 2 // Default scale
+      };
+      
+      setLoadedModels(prev => {
+        // Check if model already exists
+        if (prev.some(m => m.id === asset.id)) {
+          console.log('⚠️ Model already in scene:', asset.id);
+          return prev;
+        }
+        console.log('✅ Adding model to scene:', asset.id);
+        return [...prev, newModel];
+      });
+    } else if (asset.type === 'image') {
+      // For images without 3D model, we could create a plane with the image as texture
+      console.log('📷 Image assets not yet supported in 3D scene');
+      // TODO: Implement image plane in scene
+    }
   }, []);
 
   const themeColors = {
@@ -445,7 +553,7 @@ const App: React.FC = () => {
       <div className="absolute inset-0 z-[2] opacity-30 pointer-events-none animate-mystical bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
 
       <div className="absolute inset-0 z-[3] mix-blend-screen opacity-90">
-        <Scene3D activeOrb={currentOrb} placedOrbs={placedOrbs} theme={settings.theme} />
+        <Scene3D activeOrb={currentOrb} placedOrbs={placedOrbs} theme={settings.theme} loadedModels={loadedModels} />
       </div>
 
       <SnowOverlay emitters={activeEmitters} settings={settings} />

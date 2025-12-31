@@ -305,10 +305,16 @@ const UIOverlay: React.FC<Props> = ({
                     style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', backgroundColor: selectedShape === 'cone' ? '#ff8800' : 'rgba(255, 136, 0, 0.4)' }}
                 />
                 <button
-                    onClick={() => setSelectedShape('brownSphere')}
-                    className={`w-8 h-8 rounded-full transition-all ${selectedShape === 'brownSphere' ? 'bg-amber-800 scale-110 shadow-[0_0_15px_rgba(146,64,14,0.8)] ring-2 ring-white/30' : 'bg-amber-800/40 hover:bg-amber-800/60'}`}
-                    aria-label="Brown Sphere"
-                />
+                    onClick={() => setSelectedShape('model3D')}
+                    className={`w-8 h-8 rounded transition-all flex items-center justify-center ${selectedShape === 'model3D' ? 'bg-purple-600 scale-110 shadow-[0_0_15px_rgba(147,51,234,0.8)] ring-2 ring-white/30' : 'bg-purple-600/40 hover:bg-purple-600/60'}`}
+                    aria-label="3D Model"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={selectedShape === 'model3D' ? 'opacity-100' : 'opacity-60'}>
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </button>
                 <button
                     onClick={() => setSelectedShape('none')}
                     className={`w-8 h-8 rounded-full border-2 transition-all ${selectedShape === 'none' ? 'border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.6)]' : 'border-white/40 hover:border-white/60'}`}

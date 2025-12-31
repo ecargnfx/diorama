@@ -12,7 +12,7 @@ interface Asset {
 
 interface AssetPanelProps {
   assets: Asset[];
-  onAddToScene?: (asset: Asset) => void;
+  onAddToScene?: (asset: Asset, modelUrl?: string) => void;
   descriptionInput: string;
   onDescriptionChange: (value: string) => void;
   isGenerating: boolean;
@@ -299,7 +299,9 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 
                 <button
                   onClick={() => {
-                    onAddToScene?.(selectedAsset);
+                    // If in 3D view mode and model is generated, pass the model URL
+                    const modelUrlToAdd = viewMode === '3d' && model3DUrl ? model3DUrl : undefined;
+                    onAddToScene?.(selectedAsset, modelUrlToAdd);
                     setSelectedAsset(null);
                   }}
                   className="px-4 py-3 bg-white text-slate-900 hover:shadow-lg text-sm rounded-lg transition-all font-semibold"
