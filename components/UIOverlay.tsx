@@ -40,6 +40,7 @@ const UIOverlay: React.FC<Props> = ({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = React.useState(false);
+  const [isShapeDropdownOpen, setIsShapeDropdownOpen] = React.useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = React.useState<string | null>(null);
   const [generationError, setGenerationError] = React.useState<string | null>(null);
   const [isGenerating3D, setIsGenerating3D] = React.useState(false);
@@ -292,18 +293,43 @@ const UIOverlay: React.FC<Props> = ({
         </div> */}
 
         <div className="pointer-events-auto flex flex-col items-start gap-3 w-full md:w-auto">
-            <div className="flex items-center gap-3 bg-slate-900/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full">
-                <button
-                    onClick={() => setSelectedShape('sphere')}
-                    className={`w-8 h-8 rounded-full transition-all ${selectedShape === 'sphere' ? 'bg-blue-500 scale-110 shadow-[0_0_15px_rgba(59,130,246,0.6)]' : 'bg-blue-500/40 hover:bg-blue-500/60'}`}
-                    aria-label="Blue Sphere"
-                />
-                <button
-                    onClick={() => setSelectedShape('cone')}
-                    className={`w-8 h-8 transition-all ${selectedShape === 'cone' ? 'scale-110 shadow-[0_0_15px_rgba(255,136,0,0.6)]' : 'hover:opacity-80'}`}
-                    aria-label="Orange Cone"
-                    style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', backgroundColor: selectedShape === 'cone' ? '#ff8800' : 'rgba(255, 136, 0, 0.4)' }}
-                />
+            <div className="flex items-center gap-3 bg-slate-900/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full relative">
+                {/* Shape Dropdown */}
+                <div className="relative">
+                    <button
+                        onClick={() => setIsShapeDropdownOpen(!isShapeDropdownOpen)}
+                        className={`w-8 h-8 rounded-full transition-all flex items-center justify-center ${(selectedShape === 'sphere' || selectedShape === 'cone') ? 'scale-110 shadow-[0_0_15px_rgba(59,130,246,0.6)]' : 'bg-blue-500/40 hover:bg-blue-500/60'}`}
+                        aria-label="3D Shapes"
+                        style={{
+                            backgroundColor: selectedShape === 'cone' ? '#ff8800' : (selectedShape === 'sphere' ? '#3b82f6' : 'rgba(59, 130, 246, 0.4)'),
+                            clipPath: selectedShape === 'cone' ? 'polygon(50% 0%, 0% 100%, 100% 100%)' : 'circle(50%)'
+                        }}
+                    />
+                    {isShapeDropdownOpen && (
+                        <div className="absolute bottom-full mb-2 left-0 bg-slate-900/95 backdrop-blur-md border border-white/20 rounded-lg p-2 flex flex-col gap-2 min-w-[120px] shadow-xl">
+                            <button
+                                onClick={() => {
+                                    setSelectedShape('cone');
+                                    setIsShapeDropdownOpen(false);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 transition-colors text-left"
+                            >
+                                <div className="w-6 h-6" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)', backgroundColor: '#ff8800' }} />
+                                <span className="text-white text-sm">Cone</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSelectedShape('sphere');
+                                    setIsShapeDropdownOpen(false);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 rounded hover:bg-white/10 transition-colors text-left"
+                            >
+                                <div className="w-6 h-6 rounded-full bg-blue-500" />
+                                <span className="text-white text-sm">Sphere</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
                 <button
                     onClick={() => setSelectedShape('model3D')}
                     className={`w-8 h-8 rounded transition-all flex items-center justify-center ${selectedShape === 'model3D' ? 'bg-purple-600 scale-110 shadow-[0_0_15px_rgba(147,51,234,0.8)] ring-2 ring-white/30' : 'bg-purple-600/40 hover:bg-purple-600/60'}`}

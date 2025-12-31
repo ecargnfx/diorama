@@ -35,7 +35,7 @@ const App: React.FC = () => {
     { x: 0, y: 0, z: 0, isDetected: false, fingersExtended: 0, rotationX: 0, rotationY: 0, rotationZ: 0 }
   ]);
   const [placedOrbs, setPlacedOrbs] = useState<Orb[]>([]);
-  const [selectedShape, setSelectedShape] = useState<ShapeType>('sphere');
+  const [selectedShape, setSelectedShape] = useState<ShapeType>('cone');
   const [assets, setAssets] = useState<Asset[]>([]);
   const [descriptionInput, setDescriptionInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
