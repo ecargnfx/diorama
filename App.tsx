@@ -1,12 +1,15 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { DetectionSettings, Point, HandData, Orb, ShapeType } from './types';
+import { DetectionSettings, Point, HandData, Orb, ShapeType, FistState, HandState } from './types';
 import LightDetector from './components/LightDetector';
 import HandTracker from './components/HandTracker';
 import Scene3D from './components/Scene3D';
 import SnowOverlay from './components/SnowOverlay';
 import UIOverlay from './components/UIOverlay';
 import AssetPanel from './components/AssetPanel';
+import HandGestureDetector from './components/HandGestureDetector';
+import PowGraphic from './components/PowGraphic';
+import HiGraphic from './components/HiGraphic';
 import { GoogleGenAI } from "@google/genai";
 import html2canvas from 'html2canvas';
 
@@ -48,6 +51,8 @@ const App: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  const [fistState, setFistState] = useState<FistState>({ detected: false, x: 0, y: 0, lastSeen: 0 });
+  const [handState, setHandState] = useState<HandState>({ detected: false, x: 0, y: 0, lastSeen: 0 });
   
   // Ref to track if we've already placed an orb for the current gesture to prevent multi-firing
   const isPlacingRef = useRef(false);
@@ -587,6 +592,14 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleFistDetected = useCallback((detected: boolean, x: number, y: number) => {
+    setFistState({ detected, x, y, lastSeen: Date.now() });
+  }, []);
+
+  const handleHandDetected = useCallback((detected: boolean, x: number, y: number) => {
+    setHandState({ detected, x, y, lastSeen: Date.now() });
+  }, []);
+
   const themeColors = {
     midnight: 'from-[#020617] via-[#0f172a] to-[#020617]',
     solstice: 'from-[#1a0f02] via-[#2a1b0f] to-[#1a0f02]',
@@ -595,7 +608,18 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-slate-950 overflow-hidden select-none transition-colors duration-1000">
-      <div className={`absolute inset-0 z-0 ${settings.filterMode === 'mystical' ? 'opacity-40' : 'opacity-100'} mystical-video transition-all duration-1000 ${settings.theme === 'solstice' && settings.filterMode === 'mystical' ? 'sepia-[0.3] saturate-150' : ''}`}>
+      <div 
+        className={`absolute inset-0 z-0 mystical-video transition-all duration-1000 ${
+          settings.filterMode === 'mystical' ? 'opacity-40' : 
+          settings.filterMode === 'popart' ? 'opacity-100' : 
+          'opacity-100'
+        } ${
+          settings.theme === 'solstice' && settings.filterMode === 'mystical' ? 'sepia-[0.3] saturate-150' : ''
+        }`}
+        style={{
+          filter: settings.filterMode === 'popart' ? 'contrast(1.8) saturate(1.8) brightness(1.15) hue-rotate(-5deg)' : 'none'
+        }}
+      >
         <LightDetector 
           videoRef={videoRef}
           settings={settings} 
@@ -612,11 +636,35 @@ const App: React.FC = () => {
         <div className={`absolute inset-0 z-[1] pointer-events-none mix-blend-screen opacity-70 bg-gradient-to-br ${themeColors[settings.theme]} transition-all duration-1000`} />
       )}
 
+      {settings.filterMode === 'popart' && (
+        <div 
+          className="absolute inset-0 z-[1] pointer-events-none transition-all duration-500"
+          style={{
+            background: 'linear-gradient(45deg, #ff00ff 0%, #ffff00 33%, #00ffff 66%, #ff0000 100%)',
+            mixBlendMode: 'overlay',
+            opacity: 0.8
+          }}
+        />
+      )}
+
       <div className={`absolute inset-0 z-[3] ${settings.filterMode === 'mystical' ? 'mix-blend-screen opacity-90' : 'opacity-100'}`}>
         <Scene3D activeOrb={currentOrb} placedOrbs={placedOrbs} theme={settings.theme} loadedModels={loadedModels} />
       </div>
 
       {selectedShape === 'none' && <SnowOverlay emitters={activeEmitters} settings={settings} />}
+
+      {settings.filterMode === 'popart' && (
+        <>
+          <HandGestureDetector 
+            videoRef={videoRef}
+            onOpenHandDetected={handleHandDetected}
+            onFistDetected={handleFistDetected}
+            isActive={isCameraActive}
+          />
+          <HiGraphic state={handState} />
+          <PowGraphic state={fistState} />
+        </>
+      )}
 
       <AssetPanel 
         assets={assets}

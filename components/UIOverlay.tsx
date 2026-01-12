@@ -352,10 +352,23 @@ const UIOverlay: React.FC<Props> = ({
                 </button>
                 <div className="w-px h-8 bg-white/20" />
                 <button
-                    onClick={() => setSettings(prev => ({ ...prev, filterMode: prev.filterMode === 'clean' ? 'mystical' : 'clean' }))}
-                    className={`w-8 h-8 rounded transition-all flex items-center justify-center ${settings.filterMode === 'mystical' ? 'bg-indigo-600 scale-110 shadow-[0_0_15px_rgba(99,102,241,0.8)] ring-2 ring-white/30' : 'bg-slate-600/40 hover:bg-slate-600/60'}`}
+                    onClick={() => setSettings(prev => ({ 
+                        ...prev, 
+                        filterMode: prev.filterMode === 'clean' ? 'mystical' : 
+                                   prev.filterMode === 'mystical' ? 'popart' : 
+                                   'clean' 
+                    }))}
+                    className={`w-8 h-8 rounded transition-all flex items-center justify-center ${
+                        settings.filterMode === 'mystical' ? 'bg-indigo-600 scale-110 shadow-[0_0_15px_rgba(99,102,241,0.8)] ring-2 ring-white/30' : 
+                        settings.filterMode === 'popart' ? 'bg-pink-600 scale-110 shadow-[0_0_15px_rgba(236,72,153,0.8)] ring-2 ring-white/30' : 
+                        'bg-slate-600/40 hover:bg-slate-600/60'
+                    }`}
                     aria-label="Filter Mode"
-                    title={settings.filterMode === 'mystical' ? 'Mystical Mode' : 'Clean Mode'}
+                    title={
+                        settings.filterMode === 'mystical' ? 'Mystical Mode' : 
+                        settings.filterMode === 'popart' ? 'Pop Art Mode' : 
+                        'Clean Mode'
+                    }
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={settings.filterMode === 'mystical' ? 'opacity-100' : 'opacity-60'}>
                         <circle cx="12" cy="12" r="3"></circle>

@@ -62,7 +62,7 @@ export const requestGenerateImage = async (controlsRef: { current: ControlsRef }
   console.log('All cookies:', document.cookie); // DEBUG: See what cookies exist
   
   // TEMPORARY: Hardcoded token for testing
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlQHBsYXlob3VzZS5haSIsInVzZXJJRCI6NSwid2FsbGV0QWRkcmVzcyI6ImMzMjMwNzYxMzkzNjdhOTVlMTQ2NjE4OGZhZDg1MmJmNThlMWU0OWE3MjI0YmQ1MGQxN2IxYWU5ZTUzY2FiNzAiLCJleHAiOjE3NjcyOTY1NjZ9.tZh3R8TQWTp0ksZtP1EhoPpset-GnXxziarH7Rd7rdg'; // 👈 PASTE YOUR TOKEN HERE
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3NjgzMzc5MzR9.DOm_RNaBVH8_Oo3UwDuPpyNpArmZ0pzqUfmUGN5E2Mk.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3Njc4MzczMDB9.iVbNWHzTzPHYZU6ytRpEQ4qI-89_72wf3IFfPEqAD4o'; // 👈 PASTE YOUR TOKEN HERE
   
   // Original cookie logic (commented out for testing)
   // const token = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1] || null;
@@ -288,7 +288,7 @@ export const generateSegmentedImage = async (imageUrl: string): Promise<string> 
   console.log('All cookies:', document.cookie); // DEBUG: See what cookies exist
   
   // TEMPORARY: Hardcoded token for testing (same as requestGenerateImage)
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlQHBsYXlob3VzZS5haSIsInVzZXJJRCI6NSwid2FsbGV0QWRkcmVzcyI6ImMzMjMwNzYxMzkzNjdhOTVlMTQ2NjE4OGZhZDg1MmJmNThlMWU0OWE3MjI0YmQ1MGQxN2IxYWU5ZTUzY2FiNzAiLCJleHAiOjE3NjcyOTY1NjZ9.tZh3R8TQWTp0ksZtP1EhoPpset-GnXxziarH7Rd7rdg'; // 👈 PASTE YOUR TOKEN HERE
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3NjgzMzc5MzR9.DOm_RNaBVH8_Oo3UwDuPpyNpArmZ0pzqUfmUGN5E2Mk.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3Njc4MzczMDB9.iVbNWHzTzPHYZU6ytRpEQ4qI-89_72wf3IFfPEqAD4o'; // 👈 PASTE YOUR TOKEN HERE
   
   // Original cookie logic (commented out for testing)
   // const token = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1] || null;
@@ -460,7 +460,7 @@ export const generateTrellisModel = async (imageUrl: string, options: TrellisOpt
     console.log('🎲 Downloading GLB model from Replicate...');
     
     // Get auth token
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlQHBsYXlob3VzZS5haSIsInVzZXJJRCI6NSwid2FsbGV0QWRkcmVzcyI6ImMzMjMwNzYxMzkzNjdhOTVlMTQ2NjE4OGZhZDg1MmJmNThlMWU0OWE3MjI0YmQ1MGQxN2IxYWU5ZTUzY2FiNzAiLCJleHAiOjE3NjcyOTY1NjZ9.tZh3R8TQWTp0ksZtP1EhoPpset-GnXxziarH7Rd7rdg';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3NjgzMzc5MzR9.DOm_RNaBVH8_Oo3UwDuPpyNpArmZ0pzqUfmUGN5E2Mk.eyJlbWFpbCI6ImdyYWNlbmZ4QGdtYWlsLmNvbSIsInVzZXJJRCI6Nywid2FsbGV0QWRkcmVzcyI6ImNlOWZlOGRhNmEwZmFlZjlkOTc1MGVkMWY2NmI3MTBmYmNhZWQ5ZWMwOWRmODc3NzJjZDYzMDZlNmQ1NTMyYWIiLCJleHAiOjE3Njc4MzczMDB9.iVbNWHzTzPHYZU6ytRpEQ4qI-89_72wf3IFfPEqAD4o';
     
     // Get user info
     const verifyRes = await fetch(`/auth-api/auth/verify`, {

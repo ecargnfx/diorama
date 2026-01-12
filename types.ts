@@ -45,7 +45,21 @@ export interface Particle {
 }
 
 export type Theme = 'midnight' | 'solstice' | 'aurora';
-export type FilterMode = 'clean' | 'mystical';
+export type FilterMode = 'clean' | 'mystical' | 'popart';
+
+export interface FistState {
+  detected: boolean;
+  x: number;
+  y: number;
+  lastSeen: number;
+}
+
+export interface HandState {
+  detected: boolean;
+  x: number;
+  y: number;
+  lastSeen: number;
+}
 
 export interface DetectionSettings {
   threshold: number;
